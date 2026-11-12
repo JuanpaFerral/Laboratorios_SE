@@ -1,0 +1,7 @@
+../Core/Src/main.c:75:5:main	1
+../Core/Src/main.c:123:6:SystemClock_Config	3
+../Core/Src/main.c:165:13:MX_UART4_Init	2
+../Core/Src/main.c:198:13:MX_GPIO_Init	1
+../Core/Src/main.c:213:6:statechart_set_timer	1
+../Core/Src/main.c:221:6:statechart_unset_timer	1
+../Core/Src/main.c:231:6:Error_Handler	1

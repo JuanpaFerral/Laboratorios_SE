@@ -1,0 +1,2 @@
+../Core/Src/uart.c:10:6:HAL_UART_RxCpltCallback	4
+../Core/Src/uart.c:28:6:ejecutar_instruccion	10
