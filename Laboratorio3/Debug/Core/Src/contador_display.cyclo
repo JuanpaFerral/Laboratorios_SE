@@ -1,0 +1,4 @@
+../Core/Src/contador_display.c:16:6:HAL_TIM_PeriodElapsedCallback	3
+../Core/Src/contador_display.c:30:6:Display_EscribirPatron	2
+../Core/Src/contador_display.c:56:6:Display_Refrescar	3
+../Core/Src/contador_display.c:79:6:cronometrar	5

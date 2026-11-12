@@ -1,0 +1,6 @@
+../Core/Src/contador_display.c:8:8:tiempo_iniciador	1
+../Core/Src/contador_display.c:20:6:manejar_Display	1
+../Core/Src/contador_display.c:32:6:tarea_cronometro_	1
+../Core/Src/contador_display.c:46:6:Display_EscribirPatron	2
+../Core/Src/contador_display.c:72:6:Display_Refrescar	3
+../Core/Src/contador_display.c:94:6:cronometrar	5

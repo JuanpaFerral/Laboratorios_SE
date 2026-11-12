@@ -1,0 +1,2 @@
+../Core/Src/pulsador.c:6:10:pulsador_iniciar	48	static
+../Core/Src/pulsador.c:17:6:debounce	24	static
