@@ -21,7 +21,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "uart.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -40,6 +40,8 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
+TIM_HandleTypeDef htim2;
+
 UART_HandleTypeDef huart4;
 
 /* USER CODE BEGIN PV */
@@ -59,6 +61,7 @@ sc_eventid sc_active_evid = NULL;
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_UART4_Init(void);
+static void MX_TIM2_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -99,6 +102,7 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_UART4_Init();
+  MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
   HAL_UART_Receive_IT(&huart4, &mensaje, sizeof(uint8_t));
   statechart_init(&mi_maquina);
@@ -109,9 +113,35 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-    /* USER CODE END WHILE */
+	  /* USER CODE END WHILE */
 
-    /* USER CODE BEGIN 3 */
+	  /* USER CODE BEGIN 3 */
+	  if (sc_timer_active && ((HAL_GetTick() - sc_timer_start) >= sc_timer_delay))
+	  {
+		  sc_timer_active = false;
+		  statechart_raise_time_event(&mi_maquina, sc_active_evid);
+	  }
+	  if(fin_instruccion)
+	  {
+		  ejecutar_instruccion();
+	  }
+	  statechart_trigger_without_event(&mi_maquina);
+	  HAL_GPIO_WritePin(Indicador_microondas_GPIO_Port, Indicador_microondas_Pin,
+			  statechart_get_indicador_microondas(&mi_maquina) ? GPIO_PIN_SET : GPIO_PIN_RESET);
+	  HAL_GPIO_WritePin(Indicador_grill_GPIO_Port, Indicador_grill_Pin,
+			  statechart_get_indicador_grill(&mi_maquina) ? GPIO_PIN_SET : GPIO_PIN_RESET);
+	  HAL_GPIO_WritePin(Microondas_activo_GPIO_Port, Microondas_activo_Pin,
+			  statechart_get_microondas_activo(&mi_maquina) ? GPIO_PIN_SET : GPIO_PIN_RESET);
+	  HAL_GPIO_WritePin(Grill_activo_GPIO_Port, Grill_activo_Pin,
+			  statechart_get_grill_activo(&mi_maquina) ? GPIO_PIN_SET : GPIO_PIN_RESET);
+	  if (statechart_get_aviso_activo(&mi_maquina))
+	  {
+		  HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_4);
+	  }
+	  else
+	  {
+		  HAL_TIM_PWM_Stop(&htim2, TIM_CHANNEL_4);
+	  }
   }
   /* USER CODE END 3 */
 }
@@ -158,6 +188,65 @@ void SystemClock_Config(void)
 }
 
 /**
+  * @brief TIM2 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM2_Init(void)
+{
+
+  /* USER CODE BEGIN TIM2_Init 0 */
+
+  /* USER CODE END TIM2_Init 0 */
+
+  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+  TIM_OC_InitTypeDef sConfigOC = {0};
+
+  /* USER CODE BEGIN TIM2_Init 1 */
+
+  /* USER CODE END TIM2_Init 1 */
+  htim2.Instance = TIM2;
+  htim2.Init.Prescaler = 0;
+  htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim2.Init.Period = 7999;
+  htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim2, &sClockSourceConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_TIM_PWM_Init(&htim2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim2, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sConfigOC.OCMode = TIM_OCMODE_PWM1;
+  sConfigOC.Pulse = 4000;
+  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
+  sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
+  if (HAL_TIM_PWM_ConfigChannel(&htim2, &sConfigOC, TIM_CHANNEL_4) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM2_Init 2 */
+
+  /* USER CODE END TIM2_Init 2 */
+  HAL_TIM_MspPostInit(&htim2);
+
+}
+
+/**
   * @brief UART4 Initialization Function
   * @param None
   * @retval None
@@ -197,12 +286,24 @@ static void MX_UART4_Init(void)
   */
 static void MX_GPIO_Init(void)
 {
+  GPIO_InitTypeDef GPIO_InitStruct = {0};
   /* USER CODE BEGIN MX_GPIO_Init_1 */
 
   /* USER CODE END MX_GPIO_Init_1 */
 
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOA_CLK_ENABLE();
+  __HAL_RCC_GPIOD_CLK_ENABLE();
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOD, Indicador_microondas_Pin|Microondas_activo_Pin|Grill_activo_Pin|Indicador_grill_Pin, GPIO_PIN_RESET);
+
+  /*Configure GPIO pins : Indicador_microondas_Pin Microondas_activo_Pin Grill_activo_Pin Indicador_grill_Pin */
+  GPIO_InitStruct.Pin = Indicador_microondas_Pin|Microondas_activo_Pin|Grill_activo_Pin|Indicador_grill_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
 
   /* USER CODE BEGIN MX_GPIO_Init_2 */
 

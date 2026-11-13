@@ -3,7 +3,7 @@
 extern UART_HandleTypeDef huart4;
 extern volatile uint8_t indice;
 extern uint8_t mensaje;
-extern volatile uint8_t instruccion[10];
+extern volatile uint8_t instruccion[20];
 extern volatile bool fin_instruccion;
 extern Statechart mi_maquina;
 

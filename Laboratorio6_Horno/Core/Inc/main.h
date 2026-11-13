@@ -52,6 +52,8 @@ extern "C" {
 
 /* USER CODE END EM */
 
+void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
+
 /* Exported functions prototypes ---------------------------------------------*/
 void Error_Handler(void);
 
@@ -60,6 +62,16 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+#define Buzzer_Pin GPIO_PIN_3
+#define Buzzer_GPIO_Port GPIOA
+#define Indicador_microondas_Pin GPIO_PIN_8
+#define Indicador_microondas_GPIO_Port GPIOD
+#define Microondas_activo_Pin GPIO_PIN_9
+#define Microondas_activo_GPIO_Port GPIOD
+#define Grill_activo_Pin GPIO_PIN_12
+#define Grill_activo_GPIO_Port GPIOD
+#define Indicador_grill_Pin GPIO_PIN_13
+#define Indicador_grill_GPIO_Port GPIOD
 
 /* USER CODE BEGIN Private defines */
 
