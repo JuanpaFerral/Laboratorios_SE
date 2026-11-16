@@ -62,6 +62,9 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+#define SW_Pin GPIO_PIN_2
+#define SW_GPIO_Port GPIOA
+#define SW_EXTI_IRQn EXTI2_IRQn
 #define Buzzer_Pin GPIO_PIN_3
 #define Buzzer_GPIO_Port GPIOA
 #define Indicador_microondas_Pin GPIO_PIN_8

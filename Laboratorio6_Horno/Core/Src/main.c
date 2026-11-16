@@ -48,6 +48,8 @@ UART_HandleTypeDef huart4;
 uint8_t mensaje;
 volatile uint8_t indice = 0;
 volatile uint8_t instruccion[20];
+volatile bool sw = false;
+volatile uint32_t last_sw = 0;
 volatile bool fin_instruccion = false;
 Statechart mi_maquina;
 
@@ -79,7 +81,7 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-
+  uint32_t current_time = 0;
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -88,8 +90,6 @@ int main(void)
   HAL_Init();
 
   /* USER CODE BEGIN Init */
-  __HAL_UART_CLEAR_OREFLAG(&huart4);
-  __HAL_UART_FLUSH_DRREGISTER(&huart4);
   /* USER CODE END Init */
 
   /* Configure the system clock */
@@ -104,18 +104,22 @@ int main(void)
   MX_UART4_Init();
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
-  HAL_UART_Receive_IT(&huart4, &mensaje, sizeof(uint8_t));
   statechart_init(&mi_maquina);
   statechart_enter(&mi_maquina);
+  HAL_UART_Receive_IT(&huart4, &mensaje, sizeof(uint8_t));
+  __HAL_UART_CLEAR_OREFLAG(&huart4);
+  __HAL_UART_FLUSH_DRREGISTER(&huart4);
+  static bool aviso_prev = false;
+  bool aviso_actual = false;
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  /* USER CODE END WHILE */
+    /* USER CODE END WHILE */
 
-	  /* USER CODE BEGIN 3 */
+    /* USER CODE BEGIN 3 */
 	  if (sc_timer_active && ((HAL_GetTick() - sc_timer_start) >= sc_timer_delay))
 	  {
 		  sc_timer_active = false;
@@ -124,6 +128,21 @@ int main(void)
 	  if(fin_instruccion)
 	  {
 		  ejecutar_instruccion();
+	  }
+	  if(sw)
+	  {
+		  current_time = HAL_GetTick();
+		  if(current_time-last_sw > T_REBOTE_MS)
+		  {
+			  if(HAL_GPIO_ReadPin(SW_GPIO_Port, SW_Pin) == GPIO_PIN_RESET)
+			  {
+				  statechart_raise_startStop(&mi_maquina);
+			  }
+			  sw = false;
+			  __HAL_GPIO_EXTI_CLEAR_IT(SW_Pin);
+			  HAL_NVIC_ClearPendingIRQ(EXTI2_IRQn);
+			  HAL_NVIC_EnableIRQ(EXTI2_IRQn);
+		  }
 	  }
 	  statechart_trigger_without_event(&mi_maquina);
 	  HAL_GPIO_WritePin(Indicador_microondas_GPIO_Port, Indicador_microondas_Pin,
@@ -134,13 +153,15 @@ int main(void)
 			  statechart_get_microondas_activo(&mi_maquina) ? GPIO_PIN_SET : GPIO_PIN_RESET);
 	  HAL_GPIO_WritePin(Grill_activo_GPIO_Port, Grill_activo_Pin,
 			  statechart_get_grill_activo(&mi_maquina) ? GPIO_PIN_SET : GPIO_PIN_RESET);
-	  if (statechart_get_aviso_activo(&mi_maquina))
+
+	  aviso_actual = statechart_get_aviso_activo(&mi_maquina);
+	  if (aviso_actual != aviso_prev)
 	  {
-		  HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_4);
-	  }
-	  else
-	  {
-		  HAL_TIM_PWM_Stop(&htim2, TIM_CHANNEL_4);
+	      aviso_prev = aviso_actual;
+	      if (aviso_actual)
+	          HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_4);
+	      else
+	          HAL_TIM_PWM_Stop(&htim2, TIM_CHANNEL_4);
 	  }
   }
   /* USER CODE END 3 */
@@ -298,6 +319,12 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOD, Indicador_microondas_Pin|Microondas_activo_Pin|Grill_activo_Pin|Indicador_grill_Pin, GPIO_PIN_RESET);
 
+  /*Configure GPIO pin : SW_Pin */
+  GPIO_InitStruct.Pin = SW_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(SW_GPIO_Port, &GPIO_InitStruct);
+
   /*Configure GPIO pins : Indicador_microondas_Pin Microondas_activo_Pin Grill_activo_Pin Indicador_grill_Pin */
   GPIO_InitStruct.Pin = Indicador_microondas_Pin|Microondas_activo_Pin|Grill_activo_Pin|Indicador_grill_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
@@ -305,12 +332,26 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
 
+  /* EXTI interrupt init*/
+  HAL_NVIC_SetPriority(EXTI2_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI2_IRQn);
+
   /* USER CODE BEGIN MX_GPIO_Init_2 */
 
   /* USER CODE END MX_GPIO_Init_2 */
 }
 
 /* USER CODE BEGIN 4 */
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+	if(GPIO_Pin == SW_Pin)
+	{
+		HAL_NVIC_DisableIRQ(EXTI2_IRQn);
+		last_sw = HAL_GetTick();
+		sw = true;
+	}
+}
+
 void statechart_set_timer(Statechart* handle, const sc_eventid evid, const sc_time time_ms, const sc_boolean periodic)
 {
 	sc_active_evid = evid;
