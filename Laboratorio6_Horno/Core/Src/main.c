@@ -111,6 +111,7 @@ int main(void)
   __HAL_UART_FLUSH_DRREGISTER(&huart4);
   static bool aviso_prev = false;
   bool aviso_actual = false;
+  bool puerta_abierta = statechart_is_state_active(&mi_maquina, Statechart_main_region_Hornomicroondas_Puerta_Abierta);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -145,6 +146,9 @@ int main(void)
 		  }
 	  }
 	  statechart_trigger_without_event(&mi_maquina);
+
+	  puerta_abierta = statechart_is_state_active(&mi_maquina, Statechart_main_region_Hornomicroondas_Puerta_Abierta);
+
 	  HAL_GPIO_WritePin(Indicador_microondas_GPIO_Port, Indicador_microondas_Pin,
 			  statechart_get_indicador_microondas(&mi_maquina) ? GPIO_PIN_SET : GPIO_PIN_RESET);
 	  HAL_GPIO_WritePin(Indicador_grill_GPIO_Port, Indicador_grill_Pin,
@@ -153,7 +157,10 @@ int main(void)
 			  statechart_get_microondas_activo(&mi_maquina) ? GPIO_PIN_SET : GPIO_PIN_RESET);
 	  HAL_GPIO_WritePin(Grill_activo_GPIO_Port, Grill_activo_Pin,
 			  statechart_get_grill_activo(&mi_maquina) ? GPIO_PIN_SET : GPIO_PIN_RESET);
-
+	  HAL_GPIO_WritePin(micro_puerta_abierta_GPIO_Port, micro_puerta_abierta_Pin,
+			  (puerta_abierta && statechart_get_indicador_microondas(&mi_maquina)) ? GPIO_PIN_SET : GPIO_PIN_RESET);
+	  HAL_GPIO_WritePin(grill_puerta_abierta_GPIO_Port, grill_puerta_abierta_Pin,
+			  (puerta_abierta && statechart_get_indicador_grill(&mi_maquina)) ? GPIO_PIN_SET : GPIO_PIN_RESET);
 	  aviso_actual = statechart_get_aviso_activo(&mi_maquina);
 	  if (aviso_actual != aviso_prev)
 	  {
@@ -317,7 +324,8 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOD_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOD, Indicador_microondas_Pin|Microondas_activo_Pin|Grill_activo_Pin|Indicador_grill_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOD, Indicador_microondas_Pin|Microondas_activo_Pin|micro_puerta_abierta_Pin|Grill_activo_Pin
+                          |Indicador_grill_Pin|grill_puerta_abierta_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin : SW_Pin */
   GPIO_InitStruct.Pin = SW_Pin;
@@ -325,8 +333,10 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(SW_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : Indicador_microondas_Pin Microondas_activo_Pin Grill_activo_Pin Indicador_grill_Pin */
-  GPIO_InitStruct.Pin = Indicador_microondas_Pin|Microondas_activo_Pin|Grill_activo_Pin|Indicador_grill_Pin;
+  /*Configure GPIO pins : Indicador_microondas_Pin Microondas_activo_Pin micro_puerta_abierta_Pin Grill_activo_Pin
+                           Indicador_grill_Pin grill_puerta_abierta_Pin */
+  GPIO_InitStruct.Pin = Indicador_microondas_Pin|Microondas_activo_Pin|micro_puerta_abierta_Pin|Grill_activo_Pin
+                          |Indicador_grill_Pin|grill_puerta_abierta_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;

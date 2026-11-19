@@ -71,10 +71,14 @@ void Error_Handler(void);
 #define Indicador_microondas_GPIO_Port GPIOD
 #define Microondas_activo_Pin GPIO_PIN_9
 #define Microondas_activo_GPIO_Port GPIOD
+#define micro_puerta_abierta_Pin GPIO_PIN_11
+#define micro_puerta_abierta_GPIO_Port GPIOD
 #define Grill_activo_Pin GPIO_PIN_12
 #define Grill_activo_GPIO_Port GPIOD
 #define Indicador_grill_Pin GPIO_PIN_13
 #define Indicador_grill_GPIO_Port GPIOD
+#define grill_puerta_abierta_Pin GPIO_PIN_15
+#define grill_puerta_abierta_GPIO_Port GPIOD
 
 /* USER CODE BEGIN Private defines */
 
