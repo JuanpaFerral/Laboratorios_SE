@@ -1,0 +1,15 @@
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+
+entity cambiar_led is
+
+    port (
+	     reset : in  std_logic;
+        clk   : in  std_logic;
+        key   : in  std_logic;  
+        led   : out std_logic  
+    );
+end entity;
+
+architecture Structural of cambiar_led is
+

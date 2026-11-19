@@ -1,0 +1,26 @@
+|cambiar_led
+reset => ~NO_FANOUT~
+clk => sincronizador_2ff:u_sync.clk
+clk => led_reg.CLK
+clk => detector_flanco:u_det.clk
+key0 => led_reg.OUTPUTSELECT
+key0 => detector_flanco:u_det.reset
+key1 => sincronizador_2ff:u_sync.entrada_async
+led <= led_reg.DB_MAX_OUTPUT_PORT_TYPE
+
+
+|cambiar_led|sincronizador_2ff:u_sync
+clk => etapa2.CLK
+clk => etapa1.CLK
+entrada_async => etapa1.DATAIN
+salida_sync <= etapa2.DB_MAX_OUTPUT_PORT_TYPE
+
+
+|cambiar_led|detector_flanco:u_det
+clk => q_prev.CLK
+reset => q_prev.OUTPUTSELECT
+entrada_sync => q_prev.DATAA
+entrada_sync => pulso.IN1
+pulso <= pulso.DB_MAX_OUTPUT_PORT_TYPE
+
+
